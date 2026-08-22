@@ -14,11 +14,24 @@ export type ProductsStatus = 'loading' | 'error' | 'ready';
 
 const DEFAULT_FILTERS: ProductFilters = { query: '', categoryId: 'all', brand: 'all', status: 'all', sort: 'name' };
 
-export function useProducts() {
+/**
+ * `initialCategoryId` supports deep-linking in from Categories: a
+ * category tile navigates to `/products?category=<id>` (matching the web
+ * source's own `navigate(`/products?category=${c.id}`)`). Note the web
+ * source's ProductList never actually reads that query param back — the
+ * link there is effectively decorative. Wired to actually apply here,
+ * since a category tile visibly implying "browse this category's
+ * products" and then not filtering anything would be a worse-fidelity
+ * port of the interaction than making the param do what it evidently
+ * intends.
+ */
+export function useProducts(initialCategoryId?: string) {
   const [status, setStatus] = useState<ProductsStatus>('loading');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategoryOption[]>([]);
-  const [filters, setFilters] = useState<ProductFilters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<ProductFilters>(() =>
+    initialCategoryId ? { ...DEFAULT_FILTERS, categoryId: initialCategoryId } : DEFAULT_FILTERS
+  );
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {

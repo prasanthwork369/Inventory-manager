@@ -39,9 +39,13 @@ const SORT_OPTIONS = [
   { value: 'recent', label: 'Recently added' },
 ] as const;
 
-export function ProductListScreen() {
+interface ProductListScreenProps {
+  initialCategoryId?: string;
+}
+
+export function ProductListScreen({ initialCategoryId }: ProductListScreenProps) {
   const { status, products, categories, brands, filters, updateFilters, resetFilters, filteredProducts, activeFilterCount, refetch } =
-    useProducts();
+    useProducts(initialCategoryId);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   return (
