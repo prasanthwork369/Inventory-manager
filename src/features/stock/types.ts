@@ -98,8 +98,11 @@ export interface StockActionResult {
   quantityAfter: number;
 }
 
-/** Minimal read-only supplier shape — see data/mockSuppliers.ts for why
- * this isn't the (out of scope) Suppliers feature's Party type. */
+/** Minimal read-only {id,name} projection of the Suppliers feature's
+ * canonical Supplier record (see data/stockProvider.ts's getStockSuppliers)
+ * — kept as its own narrow type so Stock's screens/hooks don't need a
+ * dependency on Suppliers' full Supplier shape for a picker that only
+ * ever shows a name. */
 export interface StockSupplierOption {
   id: string;
   name: string;

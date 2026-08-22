@@ -1,12 +1,20 @@
 /**
  * The single swappable boundary between Stock's hooks and its data
  * source. Every hook in ../hooks/ calls only these functions — never
- * MOCK_MOVEMENTS/MOCK_STOCK_SUPPLIERS or Products' MOCK_PRODUCTS
- * directly. When SQLite arrives, this file's internals become
- * StockRepository calls (product lookups become one atomic transaction
- * with the movement insert + products.currentStock update, per the
- * approved architecture) — the function signatures below are what that
- * repository would expose, so hooks/screens need no change.
+ * MOCK_MOVEMENTS or Products' MOCK_PRODUCTS directly. When SQLite
+ * arrives, this file's internals become StockRepository calls (product
+ * lookups become one atomic transaction with the movement insert +
+ * products.currentStock update, per the approved architecture) — the
+ * function signatures below are what that repository would expose, so
+ * hooks/screens need no change.
+ *
+ * getStockSuppliers reads Suppliers' own canonical provider (Phase 8)
+ * rather than owning a second supplier seed — Stock previously had its
+ * own mockSuppliers.ts (same 5 identities), now removed. This is a
+ * read-only, one-directional dependency (same shape as Categories
+ * reading Products' getProducts()); StockSupplierOption stays a
+ * {id,name} projection of the real Supplier record so useStockEntry/
+ * StockEntryScreen needed no change.
  *
  * stockIn/stockOut/adjustStock are intentionally non-mutating beyond the
  * simulated delay, same "do not build a fake mutable store" decision
@@ -24,9 +32,9 @@
  * source itself) — preserved as-is, not silently "fixed".
  */
 import { getProductById, getProducts } from '@/features/products/data/productsProvider';
+import { getSuppliers } from '@/features/suppliers/data/suppliersProvider';
 import { STOCK_VALUATION } from '../constants';
 import { MOCK_MOVEMENTS } from './mockMovements';
-import { MOCK_STOCK_SUPPLIERS } from './mockSuppliers';
 import type {
   MovementType,
   StockActionResult,
@@ -77,7 +85,12 @@ export function getRecentMovements(limit: number): Promise<StockMovement[]> {
 }
 
 export function getStockSuppliers(): Promise<StockSupplierOption[]> {
-  return delay(MOCK_STOCK_SUPPLIERS, QUERY_DELAY_MS);
+  return getSuppliers().then((suppliers) =>
+    delay(
+      suppliers.filter((s) => s.isActive).map((s) => ({ id: s.id, name: s.name })),
+      QUERY_DELAY_MS
+    )
+  );
 }
 
 /** UI-exposed filter bucket -> the domain MovementTypes it covers. Keeps
