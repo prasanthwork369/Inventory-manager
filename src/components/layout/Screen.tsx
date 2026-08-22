@@ -6,7 +6,8 @@
  * `wide` (web's max-w-6xl vs max-w-3xl content constraint, for desktop) is
  * kept for larger devices/tablets; it's a no-op on phone widths.
  */
-import React from 'react';
+import React, { useContext } from 'react';
+import { BottomTabBarHeightContext } from 'expo-router/tabs';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '../../theme';
@@ -29,6 +30,15 @@ const MAX_WIDTH_WIDE = 1152;
 
 export function Screen({ title, subtitle, back = true, onBack, actions, children, footer, wide, scroll = true }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  // Screen is used both inside the Tabs navigator (where the bottom tab
+  // bar is visible and content/footers must clear its real height, not
+  // just the safe-area inset) and outside it (the 3 immersive root
+  // screens, which have no tab bar at all). useBottomTabBarHeight() throws
+  // when there's no Tabs ancestor, so the raw context is read directly
+  // here — it resolves to undefined outside a tab, and this falls back to
+  // the plain safe-area inset in that case.
+  const tabBarHeight = useContext(BottomTabBarHeightContext);
+  const bottomClearance = tabBarHeight ?? insets.bottom;
   const maxWidth = wide ? MAX_WIDTH_WIDE : MAX_WIDTH;
 
   return (
@@ -38,18 +48,18 @@ export function Screen({ title, subtitle, back = true, onBack, actions, children
         {scroll ? (
           <ScrollView
             style={styles.flex}
-            contentContainerStyle={styles.contentContainer}
+            contentContainerStyle={[styles.contentContainer, !footer && { paddingBottom: bottomClearance + spacing[4] }]}
             keyboardShouldPersistTaps="handled"
           >
             <View style={[styles.content, { maxWidth }]}>{children}</View>
           </ScrollView>
         ) : (
-          <View style={[styles.flex, styles.contentContainer]}>
+          <View style={[styles.flex, styles.contentContainer, !footer && { paddingBottom: bottomClearance + spacing[4] }]}>
             <View style={[styles.content, { maxWidth }]}>{children}</View>
           </View>
         )}
         {footer && (
-          <View style={[styles.footer, { paddingBottom: insets.bottom + spacing[3] }]}>
+          <View style={[styles.footer, { paddingBottom: bottomClearance + spacing[3] }]}>
             <View style={[styles.content, { maxWidth }]}>{footer}</View>
           </View>
         )}

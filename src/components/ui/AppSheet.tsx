@@ -46,7 +46,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, shadows, spacing, withOpacity } from '../../theme';
 import { AppText } from './AppText';
-import { IconButton } from './Button';
+import { Button, IconButton } from './Button';
 
 const EASE = Easing.bezier(0.23, 1, 0.32, 1);
 const BACKDROP_DURATION = 200;
@@ -149,6 +149,71 @@ export function AppSheet({ open, onClose, title, description, children, footer, 
     </Modal>
   );
 }
+
+/**
+ * Ported from the web reference's src/components/ui/Overlays.tsx
+ * (ConfirmDialog) — co-located with AppSheet there too. Added now because
+ * Products' delete-product flow is the first verified need for it; it's a
+ * genuinely reusable UI-kit primitive (every future delete/destructive
+ * action needs the same shape), not Products-specific.
+ */
+interface ConfirmDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  tone?: 'danger' | 'primary';
+  detail?: React.ReactNode;
+}
+
+export function ConfirmDialog({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmLabel = 'Confirm',
+  tone = 'danger',
+  detail,
+}: ConfirmDialogProps) {
+  return (
+    <AppSheet open={open} onClose={onClose} title={title} description={message}>
+      {detail && (
+        <View style={confirmStyles.detailBox}>
+          {typeof detail === 'string' ? (
+            <AppText size={13.5} color={colors.ink[700]}>
+              {detail}
+            </AppText>
+          ) : (
+            detail
+          )}
+        </View>
+      )}
+      <View style={confirmStyles.actions}>
+        <Button variant="secondary" block onPress={onClose}>
+          Cancel
+        </Button>
+        <Button
+          variant={tone === 'danger' ? 'danger' : 'primary'}
+          block
+          onPress={() => {
+            onConfirm();
+            onClose();
+          }}
+        >
+          {confirmLabel}
+        </Button>
+      </View>
+    </AppSheet>
+  );
+}
+
+const confirmStyles = StyleSheet.create({
+  detailBox: { borderRadius: radius.xl, backgroundColor: colors.ink[50], padding: spacing[3.5] },
+  actions: { flexDirection: 'row', gap: spacing[3], marginTop: spacing[4] },
+});
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },

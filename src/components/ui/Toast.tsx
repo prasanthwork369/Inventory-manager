@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    ...shadows.lift,
+    ...shadows.raised,
   },
   message: { flex: 1 },
 });

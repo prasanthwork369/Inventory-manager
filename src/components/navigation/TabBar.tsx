@@ -1,25 +1,45 @@
 /**
  * Ported from the web reference's src/components/layout/AppShell.tsx mobile
  * bottom nav: `primaryNav.slice(0,2)` + center FAB (opens Quick Actions) +
- * `primaryNav.slice(2)`, 5 equal columns, plus the floating "More" button
- * (`fixed bottom-[74px] right-4`, only shown when not immersive — here that
- * falls out naturally since immersive routes (scan, sales/new, purchases/new)
- * live outside the Tabs navigator entirely, so this component never mounts
- * during them). Web's `bg-white/97 backdrop-blur` is solid white here (see
- * Stage A summary). Dimensions copied 1:1: FAB 56x56 (h-14 w-14), radius 18
- * (rounded-2xl), -24 top offset (-mt-6), nav icons 22px (h-5.5), label
- * 11px/semibold, More button 40px tall (h-10), pill radius, 16px icon.
+ * `primaryNav.slice(2)`, 5 equal columns, plus the "More" button — web
+ * positions it as a floating pill (`fixed bottom-[74px] right-4`), visually
+ * independent of the nav bar's own surface, only shown when not immersive;
+ * here that falls out naturally since immersive routes (scan, sales/new,
+ * purchases/new) live outside the Tabs navigator entirely, so this
+ * component never mounts during them.
+ *
+ * The More pill lives in its own transparent row above the tab bar's own
+ * blurred surface (not sharing its background), so it reads as a distinct
+ * floating chip rather than fused to the bar — matching the web's `fixed`
+ * pill sitting apart from the nav bar. It's real layout space, not an
+ * absolutely-positioned overflow element: React Navigation measures/clips
+ * the custom tab bar to its own laid-out content, so a child positioned
+ * outside that box (e.g. `bottom: '100%'`) can get silently clipped.
+ * Reserving this row in normal flow guarantees it's always actually
+ * visible.
+ *
+ * Tab bar surface uses expo-blur's BlurView, matching the web's `bg-white/97
+ * backdrop-blur` (Stage A originally used solid white "for reliability" —
+ * revisited here since expo-blur is now a project dependency).
+ * `blurMethod="dimezisBlurViewSdk31Plus"` gives real blur on Android 31+;
+ * older Android falls back to a semi-transparent view (expo-blur's own
+ * documented behavior, not a bug).
+ *
+ * Dimensions copied 1:1: FAB 56x56 (h-14 w-14), radius 18 (rounded-2xl),
+ * -24 top offset (-mt-6), nav icons 22px (h-5.5), label 11px/semibold,
+ * More button 40px tall (h-10), pill radius, 16px icon.
  *
  * The Tabs navigator registers 5 screens (index/products/sales/reports/more)
  * so "more" has its own nested stack and keeps this tab bar visible across
  * every secondary screen — see Phase 2 report for why. Only 4 of those are
  * rendered as icons in the strip; "more" is reached exclusively through the
- * floating button below, matching the web's IA (More is not a bottom-nav
+ * floating button above, matching the web's IA (More is not a bottom-nav
  * icon there either).
  */
 import React, { useState } from 'react';
 import { router } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/tabs';
+import { BlurView } from 'expo-blur';
 import { BoxesIcon, ChartNoAxesColumn, Home, MoreHorizontal, Plus, ReceiptIndianRupee } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -82,42 +102,61 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom + spacing[1.5] }]}>
-      <View style={styles.row}>
-        {leftRoutes.map(renderItem)}
-        <View style={styles.fabColumn}>
-          <Pressable
-            onPress={() => setQuickOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Quick actions"
-            style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-          >
-            <Plus size={24} color={colors.white} />
-          </Pressable>
-        </View>
-        {rightRoutes.map(renderItem)}
+    <View style={styles.container}>
+      <View style={styles.moreRow}>
+        <Pressable
+          onPress={() => router.push('/more')}
+          accessibilityRole="button"
+          accessibilityLabel="More"
+          style={({ pressed }) => [styles.more, pressed && styles.morePressed]}
+        >
+          <MoreHorizontal size={16} color={colors.ink[700]} />
+          <AppText size={13} weight="semibold" color={colors.ink[700]}>
+            More
+          </AppText>
+        </Pressable>
       </View>
-      <Pressable
-        onPress={() => router.push('/more')}
-        accessibilityRole="button"
-        accessibilityLabel="More"
-        style={({ pressed }) => [styles.more, pressed && styles.morePressed, { bottom: '100%', marginBottom: spacing[2] }]}
+      <BlurView
+        intensity={90}
+        tint="light"
+        blurMethod="dimezisBlurViewSdk31Plus"
+        style={[styles.surface, { paddingBottom: insets.bottom + spacing[1.5] }]}
       >
-        <MoreHorizontal size={16} color={colors.ink[700]} />
-        <AppText size={13} weight="semibold" color={colors.ink[700]}>
-          More
-        </AppText>
-      </Pressable>
+        <View style={styles.row}>
+          {leftRoutes.map(renderItem)}
+          <View style={styles.fabColumn}>
+            <Pressable
+              onPress={() => setQuickOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Quick actions"
+              style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+            >
+              <Plus size={24} color={colors.white} />
+            </Pressable>
+          </View>
+          {rightRoutes.map(renderItem)}
+        </View>
+      </BlurView>
       <QuickActionsSheet open={quickOpen} onClose={() => setQuickOpen(false)} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { backgroundColor: 'transparent' },
+  moreRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[2],
+    paddingBottom: spacing[3],
+  },
+  surface: {
     borderTopWidth: 1,
     borderTopColor: withOpacity(colors.ink[200], 70),
-    backgroundColor: colors.white,
+    // web: bg-white/97 — near-opaque tint under the blur so it still
+    // reads correctly on Android's semi-transparent-view fallback.
+    backgroundColor: withOpacity(colors.white, 85),
     paddingTop: spacing[1.5],
   },
   row: {
@@ -144,13 +183,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand[600],
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.lift,
+    ...shadows.fab,
   },
   fabPressed: { transform: [{ scale: 0.95 }] },
-  // web: fixed bottom-[74px] right-4, h-10, rounded-full, border-ink-200
+  // web: fixed bottom-[74px] right-4, h-10, rounded-full, border-ink-200.
+  // Right-alignment comes from moreRow's justifyContent: 'flex-end' rather
+  // than position: 'absolute' + right — see the file header for why
+  // (React Navigation clipping the tab bar to its measured bounds).
   more: {
-    position: 'absolute',
-    right: spacing[4],
     height: spacing[10],
     flexDirection: 'row',
     alignItems: 'center',

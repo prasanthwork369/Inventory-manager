@@ -8,9 +8,10 @@
  * whatever happens once it's reached.
  */
 import React from 'react';
-import { router, type Href } from 'expo-router';
+import { router } from 'expo-router';
 import { ArrowDownToLine, ArrowUpFromLine, PackagePlus, ReceiptIndianRupee, ScanLine, ShoppingCart } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { ROUTES } from '../../constants/routes';
 import { colors, radius, spacing, withOpacity } from '../../theme';
 import { AppSheet } from '../ui/AppSheet';
 import { AppText } from '../ui/AppText';
@@ -20,16 +21,16 @@ interface QuickAction {
   Icon: typeof ReceiptIndianRupee;
   iconBg: string;
   iconColor: string;
-  to: Href;
+  to: (typeof ROUTES)[keyof typeof ROUTES];
 }
 
 const quickActions: QuickAction[] = [
-  { label: 'New Sale', Icon: ReceiptIndianRupee, iconBg: colors.brand[600], iconColor: colors.white, to: '/sales/new' },
-  { label: 'Stock In', Icon: ArrowDownToLine, iconBg: colors.good[50], iconColor: colors.good[700], to: '/more/stock/in' },
-  { label: 'Stock Out', Icon: ArrowUpFromLine, iconBg: colors.warn[50], iconColor: colors.warn[700], to: '/more/stock/out' },
-  { label: 'Add Product', Icon: PackagePlus, iconBg: colors.ink[100], iconColor: colors.ink[700], to: '/products/new' },
-  { label: 'New Purchase', Icon: ShoppingCart, iconBg: colors.ink[100], iconColor: colors.ink[700], to: '/purchases/new' },
-  { label: 'Scan Barcode', Icon: ScanLine, iconBg: colors.ink[100], iconColor: colors.ink[700], to: '/scan' },
+  { label: 'New Sale', Icon: ReceiptIndianRupee, iconBg: colors.brand[600], iconColor: colors.white, to: ROUTES.newSale },
+  { label: 'Stock In', Icon: ArrowDownToLine, iconBg: colors.good[50], iconColor: colors.good[700], to: ROUTES.stockIn },
+  { label: 'Stock Out', Icon: ArrowUpFromLine, iconBg: colors.warn[50], iconColor: colors.warn[700], to: ROUTES.stockOut },
+  { label: 'Add Product', Icon: PackagePlus, iconBg: colors.ink[100], iconColor: colors.ink[700], to: ROUTES.addProduct },
+  { label: 'New Purchase', Icon: ShoppingCart, iconBg: colors.ink[100], iconColor: colors.ink[700], to: ROUTES.newPurchase },
+  { label: 'Scan Barcode', Icon: ScanLine, iconBg: colors.ink[100], iconColor: colors.ink[700], to: ROUTES.scan },
 ];
 
 interface QuickActionsSheetProps {

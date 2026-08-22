@@ -24,6 +24,14 @@ export type FontWeightToken = keyof typeof fontFamily;
  * every distinct size found across src/pages and src/components in the web
  * project, kept as literal numbers so screens can reference the exact same
  * pixel value the reference uses instead of rounding to a generic scale.
+ *
+ * `34` added during the onboarding feature port — Onboarding.tsx's splash
+ * logo (`text-[34px]`) wasn't covered by the original Stage A audit (that
+ * pass predates onboarding being built out). `18` added during the
+ * Products feature port — ProductThumb.tsx's `lg` size (`text-[18px]`)
+ * for the same reason (Products predates the original audit too). Both
+ * purely additive: no existing entry changed, every prior caller of
+ * `fontSize` is unaffected.
  */
 export const fontSize = {
   10.5: 10.5,
@@ -38,12 +46,14 @@ export const fontSize = {
   15: 15,
   16: 16,
   17: 17,
+  18: 18,
   19: 19,
   20: 20,
   22: 22,
   24: 24,
   26: 26,
   30: 30,
+  34: 34,
   36: 36,
   38: 38,
 } as const;
