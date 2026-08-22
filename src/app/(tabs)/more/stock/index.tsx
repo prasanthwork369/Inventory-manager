@@ -1,8 +1,6 @@
 import React from 'react';
-import { Layers } from 'lucide-react-native';
-import { colors } from '@/theme';
-import { DevPlaceholderScreen } from '@/components/dev/DevPlaceholderScreen';
+import { StockDashboardScreen } from '@/features/stock/screens/StockDashboardScreen';
 
 export default function StockDashboard() {
-  return <DevPlaceholderScreen title="Stock dashboard" icon={<Layers size={28} color={colors.brand[600]} />} />;
+  return <StockDashboardScreen />;
 }
