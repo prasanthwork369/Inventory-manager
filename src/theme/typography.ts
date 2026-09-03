@@ -29,9 +29,12 @@ export type FontWeightToken = keyof typeof fontFamily;
  * logo (`text-[34px]`) wasn't covered by the original Stage A audit (that
  * pass predates onboarding being built out). `18` added during the
  * Products feature port — ProductThumb.tsx's `lg` size (`text-[18px]`)
- * for the same reason (Products predates the original audit too). Both
- * purely additive: no existing entry changed, every prior caller of
- * `fontSize` is unaffected.
+ * for the same reason (Products predates the original audit too). `32`
+ * and `28` added during the Purchases feature port — PurchasesHome.tsx/
+ * PurchaseDetail.tsx's hero totals (`text-[32px]`) and NewPurchase.tsx's
+ * success-sheet amount (`text-[28px]`), same reason. All purely
+ * additive: no existing entry changed, every prior caller of `fontSize`
+ * is unaffected.
  */
 export const fontSize = {
   10.5: 10.5,
@@ -52,7 +55,9 @@ export const fontSize = {
   22: 22,
   24: 24,
   26: 26,
+  28: 28,
   30: 30,
+  32: 32,
   34: 34,
   36: 36,
   38: 38,

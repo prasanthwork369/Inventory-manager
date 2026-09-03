@@ -23,7 +23,6 @@ import {
   TrendingUp,
   TriangleAlert,
 } from 'lucide-react-native';
-import { useBottomTabBarHeight } from 'expo-router/tabs';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ROUTES } from '@/constants/routes';
@@ -44,18 +43,17 @@ import type { DashboardSummary } from '../types';
 export function DashboardScreen() {
   const { status, summary, refetch } = useDashboard();
   const insets = useSafeAreaInsets();
-  // The custom TabBar's real rendered height (icons row + the reserved
-  // "More" row above it + its own safe-area padding) — NOT a guessed
-  // constant. Guessing here is what caused the tab bar to grow (when the
-  // More row was added) while this screen's bottom padding stayed fixed,
-  // so the last row of content ended up hidden behind/under the taller bar.
-  const tabBarHeight = useBottomTabBarHeight();
+  // The Tabs navigator lays out its screen area and the tab bar as
+  // ordinary flex-column siblings, not an absolute/floating overlay — this
+  // screen's ScrollView is already sized to end above the tab bar, so no
+  // extra bottom padding is needed to "clear" it (see Screen.tsx's header
+  // for the fuller explanation; Dashboard predates that shared component).
   const alertCount = summary ? summary.lowStock.count + summary.outOfStock.count : 0;
 
   return (
     <View style={styles.root}>
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing[4], paddingBottom: tabBarHeight + spacing[4] }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing[4], paddingBottom: spacing[4] }]}
       >
         <DashboardHeader businessName={summary?.businessName ?? ''} alertCount={alertCount} />
 

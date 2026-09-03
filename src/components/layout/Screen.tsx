@@ -30,15 +30,17 @@ const MAX_WIDTH_WIDE = 1152;
 
 export function Screen({ title, subtitle, back = true, onBack, actions, children, footer, wide, scroll = true }: ScreenProps) {
   const insets = useSafeAreaInsets();
-  // Screen is used both inside the Tabs navigator (where the bottom tab
-  // bar is visible and content/footers must clear its real height, not
-  // just the safe-area inset) and outside it (the 3 immersive root
-  // screens, which have no tab bar at all). useBottomTabBarHeight() throws
-  // when there's no Tabs ancestor, so the raw context is read directly
-  // here — it resolves to undefined outside a tab, and this falls back to
-  // the plain safe-area inset in that case.
+  // The Tabs navigator lays out its screen area and the tab bar as
+  // ordinary flex-column siblings (not an absolute/floating overlay), so
+  // the screen area's height already excludes the tab bar and content
+  // never renders behind it — no extra bottom padding is needed to
+  // "clear" it while inside Tabs. BottomTabBarHeightContext is only read
+  // here to detect whether we're inside the Tabs navigator at all:
+  // undefined means one of the 3 immersive root screens with no tab bar,
+  // where the device's safe-area inset genuinely isn't accounted for by
+  // anything else and still needs to be added.
   const tabBarHeight = useContext(BottomTabBarHeightContext);
-  const bottomClearance = tabBarHeight ?? insets.bottom;
+  const bottomClearance = tabBarHeight === undefined ? insets.bottom : 0;
   const maxWidth = wide ? MAX_WIDTH_WIDE : MAX_WIDTH;
 
   return (

@@ -8,15 +8,17 @@
  * purchases/new) live outside the Tabs navigator entirely, so this
  * component never mounts during them.
  *
- * The More pill lives in its own transparent row above the tab bar's own
- * blurred surface (not sharing its background), so it reads as a distinct
- * floating chip rather than fused to the bar — matching the web's `fixed`
- * pill sitting apart from the nav bar. It's real layout space, not an
- * absolutely-positioned overflow element: React Navigation measures/clips
- * the custom tab bar to its own laid-out content, so a child positioned
- * outside that box (e.g. `bottom: '100%'`) can get silently clipped.
- * Reserving this row in normal flow guarantees it's always actually
- * visible.
+ * The More pill sits in its own real (non-absolute) row above the blurred
+ * surface, not sharing its background, reading as a distinct chip rather
+ * than fused to the bar — matching the web's `fixed` pill sitting apart
+ * from the nav bar. This row is genuinely reserved layout space, kept as
+ * small as the pill allows: an absolutely-positioned pill was tried and
+ * reverted — even though it stayed within this component's own measured
+ * bounds, the screen content *behind* the tab bar could still scroll
+ * close enough to the boundary that the floating pill visually overlapped
+ * real list content (a card's price/badge got covered). Normal flow
+ * guarantees that can never happen, at the cost of a little more
+ * permanent height than a true float would need.
  *
  * Tab bar surface uses expo-blur's BlurView, matching the web's `bg-white/97
  * backdrop-blur` (Stage A originally used solid white "for reliability" —
@@ -36,9 +38,9 @@
  * floating button above, matching the web's IA (More is not a bottom-nav
  * icon there either).
  */
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { router } from 'expo-router';
-import type { BottomTabBarProps } from 'expo-router/tabs';
+import { BottomTabBarHeightCallbackContext, type BottomTabBarProps } from 'expo-router/tabs';
 import { BlurView } from 'expo-blur';
 import { BoxesIcon, ChartNoAxesColumn, Home, MoreHorizontal, Plus, ReceiptIndianRupee } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -66,6 +68,15 @@ const labels: Record<(typeof VISIBLE_TABS)[number], string> = {
 export function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const [quickOpen, setQuickOpen] = useState(false);
+  // React Navigation only auto-measures its OWN default tab bar; a custom
+  // `tabBar` render prop (like this one) is responsible for reporting its
+  // real height back itself, or every consumer of useBottomTabBarHeight()/
+  // BottomTabBarHeightContext (Screen.tsx's footer clearance, Dashboard's
+  // scroll padding) silently falls back to React Navigation's generic
+  // ~49px+inset estimate instead of this bar's real ~140px (moreRow + nav
+  // strip) height — which is exactly what caused sticky footer buttons to
+  // sit underneath the floating More pill instead of above it.
+  const reportTabBarHeight = useContext(BottomTabBarHeightCallbackContext);
 
   // Only the 4 primary destinations render as strip icons — "more" is a
   // real registered tab (so its stack keeps this bar visible) but is
@@ -102,7 +113,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={(e) => reportTabBarHeight?.(e.nativeEvent.layout.height)}>
       <View style={styles.moreRow}>
         <Pressable
           onPress={() => router.push('/more')}
@@ -143,13 +154,21 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
 }
 
 const styles = StyleSheet.create({
+  // Transparent, matching the web reference: the pill floats directly
+  // over the page's own background there (`position: fixed`, no backing
+  // panel), so the grey showing through here (the app's ink[50] screen
+  // background) behind the pill is correct, not a bug.
   container: { backgroundColor: 'transparent' },
+  // Real reserved row, not absolute — tightened from the original padding
+  // (was paddingTop 8 + paddingBottom 12 around the same 40px pill) since
+  // that's the only safe way to shrink this without risking the pill
+  // floating over scrollable content (see the file header).
   moreRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     paddingHorizontal: spacing[4],
-    paddingTop: spacing[2],
-    paddingBottom: spacing[3],
+    paddingTop: spacing[1],
+    paddingBottom: spacing[1.5],
   },
   surface: {
     borderTopWidth: 1,
@@ -187,9 +206,11 @@ const styles = StyleSheet.create({
   },
   fabPressed: { transform: [{ scale: 0.95 }] },
   // web: fixed bottom-[74px] right-4, h-10, rounded-full, border-ink-200.
-  // Right-alignment comes from moreRow's justifyContent: 'flex-end' rather
-  // than position: 'absolute' + right — see the file header for why
-  // (React Navigation clipping the tab bar to its measured bounds).
+  // Right-alignment comes from moreRow's justifyContent: 'flex-end'. No
+  // shadow token here (unlike most cards): Android's `elevation` on this
+  // rounded Pressable was rendering as a rectangular grey halo instead of
+  // following the pill's own shape — the border alone gives it enough
+  // definition against the surface.
   more: {
     height: spacing[10],
     flexDirection: 'row',
@@ -200,7 +221,6 @@ const styles = StyleSheet.create({
     borderColor: colors.ink[200],
     backgroundColor: colors.white,
     paddingHorizontal: spacing[3.5],
-    ...shadows.card,
   },
   morePressed: { backgroundColor: colors.ink[50] },
 });
