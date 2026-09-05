@@ -1,8 +1,6 @@
 import React from 'react';
-import { Info } from 'lucide-react-native';
-import { colors } from '@/theme';
-import { DevPlaceholderScreen } from '@/components/dev/DevPlaceholderScreen';
+import { AboutScreen } from '@/features/settings/screens/AboutScreen';
 
-export default function AboutSettings() {
-  return <DevPlaceholderScreen title="About" icon={<Info size={28} color={colors.brand[600]} />} />;
+export default function About() {
+  return <AboutScreen />;
 }

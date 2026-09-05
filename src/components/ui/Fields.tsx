@@ -195,6 +195,7 @@ interface SelectProps<T extends string> {
   onChange: (value: T) => void;
   options: SelectOption<T>[];
   invalid?: boolean;
+  disabled?: boolean;
   placeholder?: string;
   sheetTitle?: string;
   style?: StyleProp<ViewStyle>;
@@ -205,6 +206,7 @@ export function Select<T extends string>({
   onChange,
   options,
   invalid,
+  disabled,
   placeholder = 'Select...',
   sheetTitle = 'Choose an option',
   style,
@@ -217,9 +219,11 @@ export function Select<T extends string>({
     <>
       <Pressable
         onPress={() => setOpen(true)}
+        disabled={disabled}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
         accessibilityLabel={sheetTitle}
-        style={[styles.selectTrigger, { borderColor }, style]}
+        style={[styles.selectTrigger, { borderColor }, disabled && styles.selectTriggerDisabled, style]}
       >
         <AppText size={15} color={selected ? colors.ink.DEFAULT : colors.ink[400]} numberOfLines={1} style={styles.selectValue}>
           {selected?.label ?? placeholder}
@@ -377,6 +381,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     paddingHorizontal: spacing[3.5],
   },
+  // web: native <select disabled> — no explicit disabled style there,
+  // just reduced opacity like the platform default.
+  selectTriggerDisabled: { opacity: 0.5 },
   selectValue: { flexShrink: 1 },
   selectOptions: { gap: spacing[2] },
   selectOptionRow: {
