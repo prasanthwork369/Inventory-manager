@@ -1,8 +1,9 @@
 import React from 'react';
-import { History } from 'lucide-react-native';
-import { colors } from '@/theme';
-import { DevPlaceholderScreen } from '@/components/dev/DevPlaceholderScreen';
+import { MovementsScreen } from '@/features/stock/screens/MovementsScreen';
 
+// Reuses Stock's own Movements screen (reportMode only changes the
+// title) — matches the web's <Movements reportMode /> at this same
+// route, per Stock's canonical movement domain/provider.
 export default function StockMovementReport() {
-  return <DevPlaceholderScreen title="Stock movement report" icon={<History size={28} color={colors.brand[600]} />} />;
+  return <MovementsScreen reportMode />;
 }

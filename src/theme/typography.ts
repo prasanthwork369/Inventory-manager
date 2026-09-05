@@ -32,11 +32,13 @@ export type FontWeightToken = keyof typeof fontFamily;
  * for the same reason (Products predates the original audit too). `32`
  * and `28` added during the Purchases feature port — PurchasesHome.tsx/
  * PurchaseDetail.tsx's hero totals (`text-[32px]`) and NewPurchase.tsx's
- * success-sheet amount (`text-[28px]`), same reason. All purely
- * additive: no existing entry changed, every prior caller of `fontSize`
- * is unaffected.
+ * success-sheet amount (`text-[28px]`), same reason. `10` added during
+ * the Reports feature port — SalesReport.tsx's bar-chart day labels
+ * (`text-[10px]`). All purely additive: no existing entry changed, every
+ * prior caller of `fontSize` is unaffected.
  */
 export const fontSize = {
+  10: 10,
   10.5: 10.5,
   11: 11,
   11.5: 11.5,

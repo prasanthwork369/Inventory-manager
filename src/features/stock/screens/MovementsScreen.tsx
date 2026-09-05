@@ -1,9 +1,9 @@
 /**
  * Direct port of the web reference's src/pages/stock/Movements.tsx.
- * `reportMode` isn't ported — it's only ever passed from the (out of
- * scope) Reports feature; this screen serves `/more/stock/movements`
- * only, with the same title/behavior as the web's default (non-report)
- * mode.
+ * `reportMode` only changes the title (web: `reportMode ? 'Stock
+ * Movement Report' : 'Stock movements'`) — everything else is identical,
+ * so Reports' `/reports/movements` reuses this exact screen instead of a
+ * duplicate, matching the web's own `<Movements reportMode />` reuse.
  */
 import React from 'react';
 import { History, SlidersHorizontal } from 'lucide-react-native';
@@ -31,7 +31,11 @@ const RANGE_OPTIONS: { value: string; label: string }[] = [
   { value: '30', label: 'Last 30 days' },
 ];
 
-export function MovementsScreen() {
+interface MovementsScreenProps {
+  reportMode?: boolean;
+}
+
+export function MovementsScreen({ reportMode }: MovementsScreenProps) {
   const {
     status,
     movements,
@@ -50,7 +54,11 @@ export function MovementsScreen() {
   } = useMovements();
 
   return (
-    <Screen title="Stock movements" subtitle={status === 'ready' ? `${movements.length} movements` : undefined} wide>
+    <Screen
+      title={reportMode ? 'Stock Movement Report' : 'Stock movements'}
+      subtitle={status === 'ready' ? `${movements.length} movements` : undefined}
+      wide
+    >
       <View style={styles.searchRow}>
         <SearchInput
           value={filters.query}

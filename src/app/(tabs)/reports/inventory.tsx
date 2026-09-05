@@ -1,8 +1,6 @@
 import React from 'react';
-import { BoxesIcon } from 'lucide-react-native';
-import { colors } from '@/theme';
-import { DevPlaceholderScreen } from '@/components/dev/DevPlaceholderScreen';
+import { InventoryReportScreen } from '@/features/reports/screens/InventoryReportScreen';
 
 export default function InventoryReport() {
-  return <DevPlaceholderScreen title="Inventory report" icon={<BoxesIcon size={28} color={colors.brand[600]} />} />;
+  return <InventoryReportScreen mode="all" />;
 }
