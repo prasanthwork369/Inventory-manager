@@ -138,7 +138,7 @@ export function BackupScreen() {
 
           <Card style={styles.deviceCard}>
             <AppText size={13} weight="bold" color={colors.ink[400]} style={styles.deviceHeading}>
-              ON THIS DEVICE
+              On this device
             </AppText>
             <KeyValue label="Products" value={String(vm.counts.products)} />
             <KeyValue label="Sales" value={String(vm.counts.sales)} />
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   deviceCard: { padding: spacing[4] },
-  deviceHeading: { marginBottom: spacing[1] },
+  deviceHeading: { marginBottom: spacing[1], textTransform: 'uppercase', letterSpacing: 0.325 },
   doneWrap: { alignItems: 'center', paddingVertical: spacing[3] },
   doneIcon: {
     height: spacing[14],

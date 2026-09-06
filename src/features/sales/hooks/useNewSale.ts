@@ -167,6 +167,7 @@ export function useNewSale() {
     setQuery,
     orderDiscountInput,
     setOrderDiscountInput,
+    discountMinor,
     customerId,
     setCustomerId,
     customerName,

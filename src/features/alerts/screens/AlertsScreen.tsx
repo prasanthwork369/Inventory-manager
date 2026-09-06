@@ -17,9 +17,11 @@ import { EmptyState, ErrorNotice, ListSkeleton } from '@/components/ui/States';
 import { useAlerts } from '../hooks/useAlerts';
 import type { AlertFilter, InventoryAlert } from '../types';
 
-const TONE_STYLES: Record<InventoryAlert['tone'], { border: string; bg: string; icon: string }> = {
-  bad: { border: colors.bad[100], bg: colors.bad[50], icon: colors.bad[600] },
-  warn: { border: colors.warn[100], bg: colors.warn[50], icon: colors.warn[600] },
+// web: alert body text is `text-ink-600`, which emits no CSS and inherits
+// the surrounding tone-colored Card's own text color, not near-black.
+const TONE_STYLES: Record<InventoryAlert['tone'], { border: string; bg: string; icon: string; text: string }> = {
+  bad: { border: colors.bad[100], bg: colors.bad[50], icon: colors.bad[600], text: colors.bad[600] },
+  warn: { border: colors.warn[100], bg: colors.warn[50], icon: colors.warn[600], text: colors.warn[600] },
 };
 
 function actionHref(alert: InventoryAlert): Parameters<typeof router.push>[0] {
@@ -78,7 +80,7 @@ export function AlertsScreen() {
                     <AppText size={14.5} weight="bold" color={colors.ink.DEFAULT}>
                       {alert.title}
                     </AppText>
-                    <AppText size={13} color={colors.ink[700]} style={styles.alertBody}>
+                    <AppText size={13} color={tone.text} style={styles.alertBody}>
                       {alert.body}
                     </AppText>
                   </Pressable>

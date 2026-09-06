@@ -6,9 +6,13 @@
  * is desktop-only; the web source itself renders this single-column at
  * mobile width, so this is that same order, not a redesign.
  *
- * "Product activity" always shows the empty state — Stock/movements isn't
- * a built feature yet, and Product carries no movement history of its
- * own to show instead (see the hook's doc comment).
+ * "Product activity" always shows the empty state — Stock's provider
+ * already depends on Products' (for productName/currentStock lookups), so
+ * wiring Products back to Stock's getMovements() for this section would
+ * create a circular feature dependency. Same one-directional-dependency
+ * reasoning already applied to Suppliers/Customers not reading Purchases/
+ * Sales data (see suppliers/types.ts's SupplierDetailSummary comment) —
+ * Products stays upstream of Stock, not the reverse.
  */
 import React, { useState } from 'react';
 import { router } from 'expo-router';
@@ -167,7 +171,7 @@ export function ProductDetailScreen({ productId }: ProductDetailScreenProps) {
             <Divider />
             <KeyValue label="Barcode" value={product.barcode || '—'} />
             <Divider />
-            <KeyValue label="Category" value={categoryName ?? '—'} />
+            <KeyValue label="Category" value={categoryName} />
             <Divider />
             <KeyValue label="Brand" value={product.brand || '—'} />
             <Divider />

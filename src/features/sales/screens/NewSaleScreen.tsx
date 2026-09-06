@@ -63,6 +63,7 @@ export function NewSaleScreen() {
     setQuery,
     orderDiscountInput,
     setOrderDiscountInput,
+    discountMinor,
     customerId,
     setCustomerId,
     customerName,
@@ -269,7 +270,7 @@ export function NewSaleScreen() {
 
               <Card style={styles.cardPad}>
                 <KeyValue label="Subtotal" value={formatMoney(totals.subtotalMinor, CURRENCY_SYMBOL)} />
-                <KeyValue label="Discount" value={`− ${formatMoney(totals.subtotalMinor - totals.taxableMinor, CURRENCY_SYMBOL)}`} />
+                <KeyValue label="Discount" value={`− ${formatMoney(discountMinor, CURRENCY_SYMBOL)}`} />
                 <KeyValue label={`Tax (5%)`} value={formatMoney(totals.taxMinor, CURRENCY_SYMBOL)} />
                 <Divider />
                 <KeyValue label="Total payable" value={formatMoney(totals.totalMinor, CURRENCY_SYMBOL)} strong />

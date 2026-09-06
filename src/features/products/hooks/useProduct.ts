@@ -18,7 +18,7 @@ export type ProductDetailStatus = 'loading' | 'not-found' | 'ready';
 export function useProduct(id: string | undefined) {
   const [status, setStatus] = useState<ProductDetailStatus>(id ? 'loading' : 'not-found');
   const [product, setProduct] = useState<Product | null>(null);
-  const [categoryName, setCategoryName] = useState<string | null>(null);
+  const [categoryName, setCategoryName] = useState<string>('Uncategorised');
   const [reloadToken, setReloadToken] = useState(0);
   const [archiving, setArchiving] = useState(false);
 
@@ -29,7 +29,8 @@ export function useProduct(id: string | undefined) {
       if (cancelled) return;
       if (found) {
         setProduct(found);
-        setCategoryName(categories.find((c) => c.id === found.categoryId)?.name ?? null);
+        // web: categoryName() store helper always falls back to a string.
+        setCategoryName(categories.find((c) => c.id === found.categoryId)?.name ?? 'Uncategorised');
         setStatus('ready');
       } else {
         setStatus('not-found');

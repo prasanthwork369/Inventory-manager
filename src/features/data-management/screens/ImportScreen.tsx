@@ -38,8 +38,8 @@ export function ImportScreen() {
           </Pressable>
 
           <Card style={styles.columnsCard}>
-            <AppText size={13} weight="bold" color={colors.ink[400]}>
-              REQUIRED COLUMNS
+            <AppText size={13} weight="bold" color={colors.ink[400]} style={styles.columnsHeading}>
+              Required columns
             </AppText>
             <AppText size={13.5} color={colors.ink.DEFAULT} style={styles.columnsText}>
               {IMPORT_REQUIRED_COLUMNS}
@@ -129,7 +129,7 @@ export function ImportScreen() {
 
           <Card style={styles.summaryCard}>
             <AppText size={13} weight="bold" color={colors.ink[400]} style={styles.summaryHeading}>
-              SUMMARY
+              Summary
             </AppText>
             <KeyValue label="Rows in file" value={String(vm.rows.length)} />
             <KeyValue label="Will import" value={String(vm.valid.length)} />
@@ -221,6 +221,7 @@ const styles = StyleSheet.create({
   },
   uploadCaption: { marginTop: spacing[1], textAlign: 'center', maxWidth: 280 },
   columnsCard: { padding: spacing[4] },
+  columnsHeading: { textTransform: 'uppercase', letterSpacing: 0.325 },
   columnsText: { marginTop: spacing[2], lineHeight: 19 },
   templateButton: { marginTop: spacing[3], alignSelf: 'flex-start' },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
@@ -228,7 +229,7 @@ const styles = StyleSheet.create({
   problemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3] },
   problemIcon: { marginTop: 2 },
   summaryCard: { padding: spacing[4] },
-  summaryHeading: { marginBottom: spacing[1] },
+  summaryHeading: { marginBottom: spacing[1], textTransform: 'uppercase', letterSpacing: 0.325 },
   importButton: { marginTop: spacing[4] },
   chooseAnotherButton: { marginTop: spacing[2] },
   doneCard: { alignItems: 'center', padding: spacing[6] },

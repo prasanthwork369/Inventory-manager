@@ -17,7 +17,7 @@ import { Screen } from '@/components/layout/Screen';
 import { EmptyState, ErrorNotice, ListSkeleton } from '@/components/ui/States';
 import { useToast } from '@/components/ui/Toast';
 import { formatMoney } from '@/features/products/utils/money';
-import { CURRENCY_SYMBOL, RECEIPT_BUSINESS, RECEIPT_FOOTER } from '../constants';
+import { CURRENCY_SYMBOL, RECEIPT_BUSINESS, RECEIPT_FOOTER, TAX_ENABLED, TAX_RATE_PERCENT } from '../constants';
 import { useSale } from '../hooks/useSale';
 import { dateTimeLabel } from '../utils/format';
 import { formatMoneyPrecise } from '../utils/money';
@@ -147,7 +147,7 @@ export function ReceiptScreen() {
           <View style={styles.totalsStack}>
             <ReceiptLine label="Subtotal" value={formatMoneyPrecise(sale.subtotalMinor, CURRENCY_SYMBOL)} />
             {sale.discountMinor > 0 && <ReceiptLine label="Discount" value={`− ${formatMoneyPrecise(sale.discountMinor, CURRENCY_SYMBOL)}`} />}
-            <ReceiptLine label="Tax" value={formatMoneyPrecise(sale.taxMinor, CURRENCY_SYMBOL)} />
+            {TAX_ENABLED && <ReceiptLine label={`Tax (${TAX_RATE_PERCENT}%)`} value={formatMoneyPrecise(sale.taxMinor, CURRENCY_SYMBOL)} />}
             <View style={styles.totalRow}>
               <AppText size={14} weight="bold" color={colors.ink.DEFAULT}>
                 Total
@@ -166,7 +166,7 @@ export function ReceiptScreen() {
             {RECEIPT_FOOTER}
           </AppText>
           <AppText size={10.5} weight="semibold" color={colors.ink.DEFAULT} style={styles.poweredBy}>
-            POWERED BY CODE NEPTUNE
+            Powered by Code Neptune
           </AppText>
         </View>
       </View>
@@ -222,7 +222,9 @@ const styles = StyleSheet.create({
   totalsStack: { gap: spacing[1.5] },
   totalRow: { marginTop: spacing[2], flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.ink[200], paddingTop: spacing[2] },
   footerText: { textAlign: 'center', lineHeight: 18.7 },
-  poweredBy: { marginTop: spacing[3], textAlign: 'center', letterSpacing: 0.325, opacity: 0.4 },
+  // web: text-ink-300 resolves to ink.DEFAULT, not a muted gray — see
+  // theme/colors.ts's header comment. No opacity dimming.
+  poweredBy: { marginTop: spacing[3], textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.325 },
   footerRow: { flexDirection: 'row', gap: spacing[2.5] },
   flex1: { flex: 1 },
 });

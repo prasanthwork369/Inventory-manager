@@ -109,7 +109,7 @@ export function ProductListScreen({ initialCategoryId }: ProductListScreenProps)
           <EmptyState
             icon={<SearchX size={28} color={colors.brand[600]} />}
             title="No products match your search"
-            message={`Nothing found for "${filters.query}". Check the spelling, or add it as a new product.`}
+            message={`Nothing found for “${filters.query}”. Check the spelling, or add it as a new product.`}
             actionLabel="Add product"
             onAction={() => router.push(ROUTES.addProduct)}
             secondaryLabel="Clear search"

@@ -70,7 +70,7 @@ export function CustomersListScreen() {
           title={query ? 'No matches' : 'No customers yet'}
           message={
             query
-              ? `Nothing found for "${query}".`
+              ? `Nothing found for “${query}”.`
               : 'Add regular customers to track what they buy and what they owe.'
           }
           actionLabel="Add customer"

@@ -108,7 +108,7 @@ export function SalesListScreen() {
               title={filters.query ? 'No matching sales' : 'No sales in this period'}
               message={
                 filters.query
-                  ? `Nothing found for "${filters.query}". Try a different receipt number or customer.`
+                  ? `Nothing found for “${filters.query}”. Try a different receipt number or customer.`
                   : 'Record your first sale and it will appear here with its receipt.'
               }
               actionLabel="New Sale"

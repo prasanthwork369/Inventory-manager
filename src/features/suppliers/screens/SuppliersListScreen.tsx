@@ -76,7 +76,7 @@ export function SuppliersListScreen() {
           title={query ? 'No matches' : 'No suppliers yet'}
           message={
             query
-              ? `Nothing found for "${query}".`
+              ? `Nothing found for “${query}”.`
               : 'Add the businesses you buy stock from to track purchases and balances.'
           }
           actionLabel="Add supplier"

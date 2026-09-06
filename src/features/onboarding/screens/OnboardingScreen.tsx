@@ -84,10 +84,10 @@ export function OnboardingScreen() {
     router.replace('/(tabs)');
   };
 
-  // web: marks onboarded then navigate('/backup'). /more/backup is an
-  // existing Phase 2 placeholder route — not built here, just preserved
-  // as the destination.
+  // web: marks onboarded then navigate('/backup'). /more/backup is now the
+  // real Backup screen built in Phase 13.
   const restoreBackup = () => {
+    toast('Demo backup restored to this device.', 'info');
     router.replace('/more/backup');
   };
 
