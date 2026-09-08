@@ -1,35 +1,36 @@
 /**
- * web: useEffect(() => { setTimeout(() => setLoading(false), 420) }, [])
- * — the same artificial 420ms load delay is preserved here so the loading
- * skeleton is actually reachable/visible, matching the source exactly.
+ * DashboardScreen -> this hook -> DashboardSummary -> dashboardProvider
+ * (Database Stage 4: composes real Products/Sales/Purchases/Stock/
+ * Settings data). The screen only ever sees `status` + `summary`.
  *
- * DashboardScreen -> useDashboard -> DashboardSummary -> (today)
- * getMockDashboardSummary() / (future) DashboardRepository.getSummary().
- * The screen only ever sees `status` + `summary` — swapping the data
- * source later doesn't change this hook's return shape.
+ * The artificial setTimeout this hook used while Dashboard's data was a
+ * literal mock is gone — a real DB read already takes genuine async time,
+ * so this now follows the same effect/.then/.catch shape every other
+ * hook in the app uses.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { getMockDashboardSummary } from '../data/mockDashboardSummary';
+import { getDashboardSummary } from '../data/dashboardProvider';
 import type { DashboardStatus, DashboardSummary } from '../types';
-
-const LOAD_DELAY_MS = 420;
 
 export function useDashboard() {
   const [status, setStatus] = useState<DashboardStatus>('loading');
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  // `status` already starts 'loading' (initial useState value) for the
-  // first run; `refetch` below sets it back to 'loading' itself before
-  // bumping reloadToken, so the effect never needs to setState synchronously
-  // in its own body — avoids the setState-in-effect cascading-render issue.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const data = getMockDashboardSummary();
-      setSummary(data);
-      setStatus(data.productCount === 0 ? 'empty' : 'ready');
-    }, LOAD_DELAY_MS);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    getDashboardSummary()
+      .then((data) => {
+        if (cancelled) return;
+        setSummary(data);
+        setStatus(data.productCount === 0 ? 'empty' : 'ready');
+      })
+      .catch(() => {
+        if (!cancelled) setStatus('error');
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [reloadToken]);
 
   const refetch = useCallback(() => {

@@ -1,28 +1,34 @@
 /**
- * App-entry gate abstraction: "has onboarding been completed" as a single
- * cross-feature source of truth, consumed by src/app/index.tsx (the entry
- * gate) and updated by the onboarding feature on completion.
+ * App-entry gate: "has onboarding been completed" backed by the real
+ * app_settings row (Database Stage 2/4) instead of an in-memory flag, so
+ * a cold restart after completing onboarding goes straight to the app.
  *
- * Temporary in-memory implementation — a module-scoped value + a minimal
- * subscriber set, read reactively via useSyncExternalStore (built into
- * React, no new dependency). No AsyncStorage/SQLite here.
+ * `settingsRepository.isOnboardingComplete()` calls `getDatabase()`
+ * internally, so importing this module (from the root layout, as early
+ * as possible) is what kicks off DB open + migration — the "single
+ * initialization path" every DB-backed provider then relies on.
  *
- * Future SQLite swap: replace `getSnapshot`/`setOnboardingComplete`'s
- * bodies with a repository-backed read/write (and, if that read becomes
- * async, have `getSnapshot` return 'loading' until the first resolved
- * value arrives). `AppEntryStatus`'s existing 'loading' member means
- * src/app/index.tsx and this hook's return type do not need to change
- * shape when that happens — only this file's internals do.
+ * 'error' is a new AppEntryStatus member: a failed DB open/migration is a
+ * real, if rare, failure a user should see instead of being stuck on a
+ * blank splash or silently dropped into onboarding — src/app/_layout.tsx
+ * renders a minimal ErrorNotice + retry for it.
  */
 import { useSyncExternalStore } from 'react';
+import { settingsRepository } from '@/database';
 
-export type AppEntryStatus = 'loading' | 'needs-onboarding' | 'ready';
+export type AppEntryStatus = 'loading' | 'needs-onboarding' | 'ready' | 'error';
 
-let onboardingComplete = false;
+type Snapshot = 'loading' | 'complete' | 'not-complete' | 'error';
+
+let snapshot: Snapshot = 'loading';
 const listeners = new Set<() => void>();
 
-function getSnapshot(): boolean {
-  return onboardingComplete;
+function notify() {
+  listeners.forEach((listener) => listener());
+}
+
+function getSnapshot(): Snapshot {
+  return snapshot;
 }
 
 function subscribe(listener: () => void): () => void {
@@ -30,13 +36,40 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-/** Called by the onboarding feature once its flow finishes. */
-export function completeOnboarding(): void {
-  onboardingComplete = true;
-  listeners.forEach((listener) => listener());
+async function load(): Promise<void> {
+  snapshot = 'loading';
+  notify();
+  try {
+    const complete = await settingsRepository.isOnboardingComplete();
+    snapshot = complete ? 'complete' : 'not-complete';
+  } catch {
+    snapshot = 'error';
+  }
+  notify();
 }
 
+load();
+
+/** Called by the onboarding feature once its flow finishes. */
+export async function completeOnboarding(): Promise<void> {
+  await settingsRepository.setOnboardingComplete();
+  snapshot = 'complete';
+  notify();
+}
+
+/** Lets the error screen retry DB initialization without a full app restart. */
+export function retryAppEntry(): void {
+  load();
+}
+
+const STATUS_FROM_SNAPSHOT: Record<Snapshot, AppEntryStatus> = {
+  loading: 'loading',
+  complete: 'ready',
+  'not-complete': 'needs-onboarding',
+  error: 'error',
+};
+
 export function useAppEntry(): AppEntryStatus {
-  const complete = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  return complete ? 'ready' : 'needs-onboarding';
+  const current = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return STATUS_FROM_SNAPSHOT[current];
 }

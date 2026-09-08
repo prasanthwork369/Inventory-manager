@@ -2,9 +2,12 @@ import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, useFonts } from '@expo-google-fonts/inter';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useAppEntry } from '@/hooks/useAppEntry';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { retryAppEntry, useAppEntry } from '@/hooks/useAppEntry';
+import { ErrorNotice } from '@/components/ui/States';
 import { ToastProvider } from '@/components/ui/Toast';
+import { colors, spacing } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,6 +26,25 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   if (!fontsLoaded || status === 'loading') return null;
+
+  // DB open/migration failed — a real (if rare) failure the user should
+  // see and retry, not a raw SQL error or an indefinite blank splash.
+  if (status === 'error') {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.errorRoot}>
+          <View style={styles.errorContent}>
+            <ErrorNotice
+              title="Couldn't start the app"
+              message="Something went wrong preparing your data. Try again."
+              action="Retry"
+              onAction={retryAppEntry}
+            />
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
@@ -53,3 +75,8 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  errorRoot: { flex: 1, backgroundColor: colors.ink[50] },
+  errorContent: { flex: 1, justifyContent: 'center', padding: spacing[5] },
+});

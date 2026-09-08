@@ -32,6 +32,8 @@ import { Button } from '@/components/ui/Button';
 import { Card, Divider } from '@/components/ui/Card';
 import { Field, Input, Select, Textarea } from '@/components/ui/Fields';
 import { useToast } from '@/components/ui/Toast';
+import { updateSettings } from '@/features/settings/data/settingsProvider';
+import { DEFAULT_SETTINGS } from '@/features/settings/constants';
 import { BUSINESS_TYPES, COUNTRIES, CURRENCIES } from '../constants';
 import { useOnboarding } from '../hooks/useOnboarding';
 import type { LockMode } from '../types';
@@ -73,13 +75,35 @@ export function OnboardingScreen() {
     completeSecurityStep,
   } = useOnboarding();
 
-  // web: finish() — updateSettings(security) + setOnboarded(true) + toast + navigate('/').
-  // setOnboarded(true) is now the shared (in-memory, future-SQLite-backed)
-  // useAppEntry status — see src/hooks/useAppEntry.ts. Routes straight to
-  // /(tabs), not through the entry gate, and with replace so Back can't
-  // return to onboarding.
-  const finish = () => {
-    completeOnboarding();
+  // web: finish() — updateSettings(business + security) + setOnboarded(true)
+  // + toast + navigate('/'). Persists the collected business/security draft
+  // into the same Settings row the Settings screens later read/edit, so
+  // there's one source of truth (Section 13) — email/logo aren't collected
+  // here, so they start blank rather than inheriting the seeded demo
+  // business's placeholder values. Only `hasPinSet` is derived from the
+  // chosen lock mode; the raw PIN digits are never persisted (see
+  // SecuritySettings' own doc comment).
+  const finish = async () => {
+    await updateSettings({
+      business: {
+        name: business.name,
+        type: business.type,
+        currency: business.currency,
+        country: business.country,
+        phone: business.phone,
+        address: business.address,
+        currencySymbol,
+        email: '',
+        logo: '',
+      },
+      security: {
+        mode: security.mode,
+        hasPinSet: security.mode === 'pin',
+        autoLock: DEFAULT_SETTINGS.security.autoLock,
+        timeoutMinutes: DEFAULT_SETTINGS.security.timeoutMinutes,
+      },
+    });
+    await completeOnboarding();
     toast('Your business is ready to go.');
     router.replace('/(tabs)');
   };

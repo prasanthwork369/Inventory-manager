@@ -1,31 +1,30 @@
 /**
- * Unlike every other feature's temporary provider, this one is
- * genuinely mutable within the session — Settings is an editable
- * configuration feature, not historical/transactional data, and the
- * phase brief explicitly allows session-level state here so reopening a
- * settings screen shows what was just saved. Still no AsyncStorage/
- * SQLite/localStorage: a plain module-scoped variable, reset on app
- * reload. Future SQLite swap only changes this file's internals —
- * getSettings/updateSettings' shapes already match what a
- * SettingsRepository would expose.
+ * The single swappable boundary between Settings' hooks and its data
+ * source — now backed by settingsRepository's singleton `app_settings`
+ * row (Database Stage 2) instead of a module-scoped variable, so a save
+ * now genuinely survives an app restart.
+ *
+ * `updateSettings` keeps its existing `Partial<AppSettings>` shape: every
+ * settings hook calls it with exactly one section key (`{ tax: form }`,
+ * `{ business: trimmed }`, ...), which this dispatches to the matching
+ * settingsRepository.update*Settings call. Onboarding's completion (see
+ * OnboardingScreen.tsx) is the one caller that passes two keys
+ * (business + security) in a single patch, so every present key is
+ * applied, not just the first.
  */
-import { DEFAULT_SETTINGS } from '../constants';
+import { settingsRepository } from '@/database';
 import type { AppSettings } from '../types';
 
-const SIMULATED_DELAY_MS = 300;
-const SAVE_DELAY_MS = 450;
-
-function delay<T>(value: T, ms: number): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
-let currentSettings: AppSettings = { ...DEFAULT_SETTINGS };
-
 export function getSettings(): Promise<AppSettings> {
-  return delay(currentSettings, SIMULATED_DELAY_MS);
+  return settingsRepository.getSettings();
 }
 
-export function updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
-  currentSettings = { ...currentSettings, ...patch };
-  return delay(currentSettings, SAVE_DELAY_MS);
+export async function updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
+  if (patch.business) await settingsRepository.updateBusinessSettings(patch.business);
+  if (patch.tax) await settingsRepository.updateTaxSettings(patch.tax);
+  if (patch.inventory) await settingsRepository.updateInventorySettings(patch.inventory);
+  if (patch.receipt) await settingsRepository.updateReceiptSettings(patch.receipt);
+  if (patch.security) await settingsRepository.updateSecuritySettings(patch.security);
+  if (patch.notifications) await settingsRepository.updateNotificationSettings(patch.notifications);
+  return settingsRepository.getSettings();
 }

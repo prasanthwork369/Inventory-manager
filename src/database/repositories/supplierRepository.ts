@@ -43,6 +43,15 @@ export async function getActiveSuppliers(): Promise<Supplier[]> {
   return rows.map(mapSupplierRowToDomain);
 }
 
+/** No UNIQUE constraint on phone — this is a soft, form-level advisory
+ * check only (matches suppliersProvider.ts's pre-Stage-4 behavior, which
+ * never special-cased blank phone either). */
+export async function isSupplierPhoneTaken(phone: string, excludingId?: string): Promise<boolean> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{ id: string }>(`SELECT id FROM suppliers WHERE phone = ? AND id != ? LIMIT 1`, [phone, excludingId ?? '']);
+  return row !== null;
+}
+
 export async function countActiveSuppliers(): Promise<number> {
   const db = await getDatabase();
   const row = await db.getFirstAsync<{ n: number }>(`SELECT COUNT(*) AS n FROM suppliers WHERE is_active = 1`);

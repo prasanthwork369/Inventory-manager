@@ -46,6 +46,14 @@ export async function countActiveCustomers(): Promise<number> {
   return row?.n ?? 0;
 }
 
+/** No UNIQUE constraint on phone — soft, form-level advisory check only,
+ * matching customersProvider.ts's pre-Stage-4 behavior. */
+export async function isCustomerPhoneTaken(phone: string, excludingId?: string): Promise<boolean> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{ id: string }>(`SELECT id FROM customers WHERE phone = ? AND id != ? LIMIT 1`, [phone, excludingId ?? '']);
+  return row !== null;
+}
+
 /** No active filter — a sale's customer_id must still resolve after the
  * customer is archived. */
 export async function getCustomerById(id: string): Promise<Customer | undefined> {
