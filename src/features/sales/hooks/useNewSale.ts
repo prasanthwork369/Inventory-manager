@@ -16,8 +16,9 @@ import { toMinorUnits } from '@/features/products/utils/money';
 import { createCustomer, getCustomers } from '@/features/customers/data/customersProvider';
 import type { Customer } from '@/features/customers/types';
 import { ALLOW_NEGATIVE_STOCK } from '@/features/stock/constants';
+import { getSettings } from '@/features/settings/data/settingsProvider';
 import { createSale } from '../data/salesProvider';
-import { calculateSaleTotals } from '../utils/calculations';
+import { calculateSaleTotals, type SaleTaxConfig } from '../utils/calculations';
 import type { PaymentMethod, Sale } from '../types';
 
 export type NewSaleStatus = 'loading' | 'error' | 'ready';
@@ -37,6 +38,7 @@ export function useNewSale() {
   const [status, setStatus] = useState<NewSaleStatus>('loading');
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [taxConfig, setTaxConfig] = useState<SaleTaxConfig>({ enabled: false, ratePercent: 0 });
   const [reloadToken, setReloadToken] = useState(0);
 
   const [step, setStep] = useState<NewSaleStep>('cart');
@@ -54,11 +56,12 @@ export function useNewSale() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getProducts(), getCustomers()])
-      .then(([productList, customerList]) => {
+    Promise.all([getProducts(), getCustomers(), getSettings()])
+      .then(([productList, customerList, settings]) => {
         if (cancelled) return;
         setProducts(productList);
         setCustomers(customerList);
+        setTaxConfig({ enabled: settings.tax.enabled, ratePercent: settings.tax.ratePercent });
         setStatus('ready');
       })
       .catch(() => {
@@ -77,7 +80,7 @@ export function useNewSale() {
   const customerName = customerId ? (customers.find((c) => c.id === customerId)?.name ?? 'Walk-in Customer') : 'Walk-in Customer';
 
   const discountMinor = toMinorUnits(orderDiscountInput);
-  const totals = calculateSaleTotals(items, discountMinor);
+  const totals = calculateSaleTotals(items, discountMinor, taxConfig);
   const receivedMinor = toMinorUnits(receivedInput);
   const changeMinor = Math.max(receivedMinor - totals.totalMinor, 0);
 

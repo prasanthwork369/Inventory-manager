@@ -1,17 +1,16 @@
 /**
  * The one shared place sale totals are computed — used by the New Sale
- * cart/summary steps and salesProvider's createSale, so none of them can
- * drift out of sync. Mirrors NewSale.tsx's inline calculation exactly:
- * line totals (qty*price - line discount) -> subtotal -> taxable
- * (subtotal - order discount, floored at 0) -> tax -> total.
+ * cart/summary steps (via real persisted Tax Settings) and the createSale
+ * use-case, so the live preview and the saved sale can never drift apart.
+ * Mirrors NewSale.tsx's inline calculation exactly: line totals (qty*price
+ * - line discount) -> subtotal -> taxable (subtotal - order discount,
+ * floored at 0) -> tax -> total.
  *
  * Return refund math is kept separate (calculateReturnRefund) — it's a
  * genuinely different computation (per-unit price net of the original
  * line discount, times the quantity being returned), not a variant of
  * the sale-total path.
  */
-import { TAX_ENABLED, TAX_RATE_PERCENT } from '../constants';
-
 export interface SaleTotals {
   subtotalMinor: number;
   taxableMinor: number;
@@ -19,13 +18,19 @@ export interface SaleTotals {
   totalMinor: number;
 }
 
+export interface SaleTaxConfig {
+  enabled: boolean;
+  ratePercent: number;
+}
+
 export function calculateSaleTotals(
   items: { quantity: number; unitPriceMinor: number; discountMinor: number }[],
-  orderDiscountMinor: number
+  orderDiscountMinor: number,
+  taxConfig: SaleTaxConfig
 ): SaleTotals {
   const subtotalMinor = items.reduce((sum, it) => sum + it.quantity * it.unitPriceMinor - it.discountMinor, 0);
   const taxableMinor = Math.max(subtotalMinor - orderDiscountMinor, 0);
-  const taxMinor = TAX_ENABLED ? Math.round((taxableMinor * TAX_RATE_PERCENT) / 100) : 0;
+  const taxMinor = taxConfig.enabled ? Math.round((taxableMinor * taxConfig.ratePercent) / 100) : 0;
   const totalMinor = taxableMinor + taxMinor;
   return { subtotalMinor, taxableMinor, taxMinor, totalMinor };
 }

@@ -1,16 +1,18 @@
 /**
  * Atomic Create Sale: header + items + per-item stock decrease + SALE
- * movements, all in one transaction. Total calculation mirrors
- * sales/utils/calculations.ts's calculateSaleTotals; stock-sufficiency
- * check mirrors useNewSale.ts's cart guard (`quantity > currentStock &&
- * !allowNegativeStock`) — both duplicated, not imported, for the same
- * "application layer can't depend on a feature layer" reason used
- * throughout the database layer.
+ * movements, all in one transaction. Totals are computed by the same
+ * calculateSaleTotals() the New Sale cart preview uses (both read live
+ * settingsRepository tax config), so the preview and the saved sale can
+ * never disagree — this is the one place that math lives. Stock-
+ * sufficiency check mirrors useNewSale.ts's cart guard (`quantity >
+ * currentStock && !allowNegativeStock`), duplicated since it's a one-line
+ * guard, not a calculation worth sharing a module for.
  */
 import { getDatabase, productRepository, saleRepository, settingsRepository, stockMovementRepository } from '@/database';
 import { generateId } from '@/database/repositories/shared';
 import { BusinessError } from '../errors';
 import { pad, runInTransaction } from '../shared';
+import { calculateSaleTotals } from '@/features/sales/utils/calculations';
 import type { CreateSaleInput, Sale, SaleItem } from '@/features/sales/types';
 
 export async function createSale(input: CreateSaleInput): Promise<Sale> {
@@ -41,10 +43,10 @@ export async function createSale(input: CreateSaleInput): Promise<Sale> {
       });
     }
 
-    const subtotalMinor = resolvedItems.reduce((sum, it) => sum + it.quantity * it.unitPriceMinor - it.discountMinor, 0);
-    const taxableMinor = Math.max(subtotalMinor - input.discountMinor, 0);
-    const taxMinor = settings.tax.enabled ? Math.round((taxableMinor * settings.tax.ratePercent) / 100) : 0;
-    const totalMinor = taxableMinor + taxMinor;
+    const { subtotalMinor, taxMinor, totalMinor } = calculateSaleTotals(resolvedItems, input.discountMinor, {
+      enabled: settings.tax.enabled,
+      ratePercent: settings.tax.ratePercent,
+    });
 
     const sale: Sale = {
       id: generateId('sal'),

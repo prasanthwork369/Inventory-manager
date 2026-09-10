@@ -1,12 +1,15 @@
 /**
  * Direct port of the web reference's src/pages/sales/ReceiptPage.tsx.
- * `receipt.showLogo`/`showTax`/`business.*`/`receipt.footer` come from
- * RECEIPT_BUSINESS/RECEIPT_FOOTER (Settings doesn't exist yet, matching
- * the same fixed-constant pattern already used across Stock/Purchases/
- * Sales for pending-Settings values). Share/Download/Print are the web's
- * own mocked actions (toast only) — preserved as-is.
+ * `business.*`/`receipt.*` now come from the real, persisted Settings
+ * (Database Stage 5) instead of the old RECEIPT_BUSINESS/RECEIPT_FOOTER
+ * placeholder constants — fetched locally in this screen (not via
+ * useSale, which SaleDetailScreen also uses and doesn't need Settings
+ * for) so the change stays contained to Receipt. `receipt.showLogo`/
+ * `showTax` gate the logo and tax line exactly like the web. Share/
+ * Download/Print are the web's own mocked actions (toast only) —
+ * preserved as-is.
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Download, Printer, ReceiptText, Share2 } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -17,7 +20,8 @@ import { Screen } from '@/components/layout/Screen';
 import { EmptyState, ErrorNotice, ListSkeleton } from '@/components/ui/States';
 import { useToast } from '@/components/ui/Toast';
 import { formatMoney } from '@/features/products/utils/money';
-import { CURRENCY_SYMBOL, RECEIPT_BUSINESS, RECEIPT_FOOTER, TAX_ENABLED, TAX_RATE_PERCENT } from '../constants';
+import { getSettings } from '@/features/settings/data/settingsProvider';
+import type { AppSettings } from '@/features/settings/types';
 import { useSale } from '../hooks/useSale';
 import { dateTimeLabel } from '../utils/format';
 import { formatMoneyPrecise } from '../utils/money';
@@ -26,8 +30,19 @@ export function ReceiptScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const toast = useToast();
   const { status, sale, refetch } = useSale(id);
+  const [settings, setSettings] = useState<AppSettings | null>(null);
 
-  if (status === 'loading') {
+  useEffect(() => {
+    let cancelled = false;
+    getSettings().then((s) => {
+      if (!cancelled) setSettings(s);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (status === 'loading' || !settings) {
     return (
       <Screen title="Receipt">
         <ListSkeleton rows={3} />
@@ -58,6 +73,8 @@ export function ReceiptScreen() {
   }
 
   const changeMinor = Math.max(sale.amountReceivedMinor - sale.totalMinor, 0);
+  const { business, receipt, tax } = settings;
+  const currencySymbol = business.currencySymbol;
 
   return (
     <Screen
@@ -86,19 +103,21 @@ export function ReceiptScreen() {
       <View style={styles.wrap}>
         <View style={styles.receipt}>
           <View style={styles.centered}>
-            <View style={styles.logo}>
-              <AppText size={17} weight="extrabold" color={colors.white}>
-                {RECEIPT_BUSINESS.name.slice(0, 1)}
-              </AppText>
-            </View>
+            {receipt.showLogo && (
+              <View style={styles.logo}>
+                <AppText size={17} weight="extrabold" color={colors.white}>
+                  {business.name.slice(0, 1)}
+                </AppText>
+              </View>
+            )}
             <AppText size={17} weight="extrabold" color={colors.ink.DEFAULT} style={styles.businessName}>
-              {RECEIPT_BUSINESS.name}
+              {business.name}
             </AppText>
             <AppText size={12} color={colors.ink[500]} style={styles.businessLine}>
-              {RECEIPT_BUSINESS.address}
+              {business.address}
             </AppText>
             <AppText size={12} color={colors.ink[500]}>
-              {RECEIPT_BUSINESS.phone}
+              {business.phone}
             </AppText>
           </View>
 
@@ -130,14 +149,14 @@ export function ReceiptScreen() {
                   {it.productName}
                 </AppText>
                 <AppText size={11.5} color={colors.ink[400]} tabular>
-                  {formatMoneyPrecise(it.unitPriceMinor, CURRENCY_SYMBOL)} each
+                  {formatMoneyPrecise(it.unitPriceMinor, currencySymbol)} each
                 </AppText>
               </View>
               <AppText size={12.5} weight="semibold" tabular color={colors.ink[700]} style={styles.colQty}>
                 {it.quantity}
               </AppText>
               <AppText size={12.5} weight="semibold" tabular color={colors.ink.DEFAULT} style={styles.colAmount}>
-                {formatMoneyPrecise(it.quantity * it.unitPriceMinor - it.discountMinor, CURRENCY_SYMBOL)}
+                {formatMoneyPrecise(it.quantity * it.unitPriceMinor - it.discountMinor, currencySymbol)}
               </AppText>
             </View>
           ))}
@@ -145,25 +164,25 @@ export function ReceiptScreen() {
           <View style={styles.dashedDivider} />
 
           <View style={styles.totalsStack}>
-            <ReceiptLine label="Subtotal" value={formatMoneyPrecise(sale.subtotalMinor, CURRENCY_SYMBOL)} />
-            {sale.discountMinor > 0 && <ReceiptLine label="Discount" value={`− ${formatMoneyPrecise(sale.discountMinor, CURRENCY_SYMBOL)}`} />}
-            {TAX_ENABLED && <ReceiptLine label={`Tax (${TAX_RATE_PERCENT}%)`} value={formatMoneyPrecise(sale.taxMinor, CURRENCY_SYMBOL)} />}
+            <ReceiptLine label="Subtotal" value={formatMoneyPrecise(sale.subtotalMinor, currencySymbol)} />
+            {sale.discountMinor > 0 && <ReceiptLine label="Discount" value={`− ${formatMoneyPrecise(sale.discountMinor, currencySymbol)}`} />}
+            {tax.enabled && receipt.showTax && <ReceiptLine label={`Tax (${tax.ratePercent}%)`} value={formatMoneyPrecise(sale.taxMinor, currencySymbol)} />}
             <View style={styles.totalRow}>
               <AppText size={14} weight="bold" color={colors.ink.DEFAULT}>
                 Total
               </AppText>
               <AppText size={17} weight="extrabold" tabular color={colors.ink.DEFAULT}>
-                {formatMoney(sale.totalMinor, CURRENCY_SYMBOL)}
+                {formatMoney(sale.totalMinor, currencySymbol)}
               </AppText>
             </View>
-            <ReceiptLine label={`Paid (${sale.paymentMethod})`} value={formatMoneyPrecise(sale.amountReceivedMinor, CURRENCY_SYMBOL)} />
-            <ReceiptLine label="Change" value={formatMoneyPrecise(changeMinor, CURRENCY_SYMBOL)} />
+            <ReceiptLine label={`Paid (${sale.paymentMethod})`} value={formatMoneyPrecise(sale.amountReceivedMinor, currencySymbol)} />
+            <ReceiptLine label="Change" value={formatMoneyPrecise(changeMinor, currencySymbol)} />
           </View>
 
           <View style={styles.dashedDivider} />
 
           <AppText size={11.5} color={colors.ink[500]} style={styles.footerText}>
-            {RECEIPT_FOOTER}
+            {receipt.footer}
           </AppText>
           <AppText size={10.5} weight="semibold" color={colors.ink.DEFAULT} style={styles.poweredBy}>
             Powered by Code Neptune
