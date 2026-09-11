@@ -152,7 +152,7 @@ export function BackupScreen() {
         </View>
       )}
 
-      <AppSheet open={vm.phase === 'working'} onClose={() => undefined} title="Creating backup">
+      <AppSheet open={vm.phase === 'working'} onClose={() => undefined} title="Creating backup" dismissable={false}>
         <ProcessingState title="Packing your data" message="Collecting products, sales, purchases and movements." />
       </AppSheet>
 
@@ -241,7 +241,7 @@ export function BackupScreen() {
         )}
       </AppSheet>
 
-      <AppSheet open={vm.restoreStep === 'working'} onClose={() => undefined} title="Restoring backup">
+      <AppSheet open={vm.restoreStep === 'working'} onClose={() => undefined} title="Restoring backup" dismissable={false}>
         <ProcessingState title="Restoring your data" message="Please keep the app open until this finishes." />
       </AppSheet>
     </Screen>

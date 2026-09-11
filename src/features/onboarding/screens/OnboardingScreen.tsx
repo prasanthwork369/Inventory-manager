@@ -289,7 +289,7 @@ export function OnboardingScreen() {
                 <Card style={styles.summaryCard}>
                   <SummaryRow label="Products" value="22 sample products loaded" />
                   <Divider />
-                  <SummaryRow label="Stock" value="Opening stock recorded for every product" />
+                  <SummaryRow label="Stock" value="Opening stock recorded" />
                   <Divider />
                   <SummaryRow label="Currency" value={`${business.currency} (${currencySymbol})`} />
                   <Divider />

@@ -8,17 +8,16 @@
  * purchases/new) live outside the Tabs navigator entirely, so this
  * component never mounts during them.
  *
- * The More pill sits in its own real (non-absolute) row above the blurred
- * surface, not sharing its background, reading as a distinct chip rather
- * than fused to the bar — matching the web's `fixed` pill sitting apart
- * from the nav bar. This row is genuinely reserved layout space, kept as
- * small as the pill allows: an absolutely-positioned pill was tried and
- * reverted — even though it stayed within this component's own measured
- * bounds, the screen content *behind* the tab bar could still scroll
- * close enough to the boundary that the floating pill visually overlapped
- * real list content (a card's price/badge got covered). Normal flow
- * guarantees that can never happen, at the cost of a little more
- * permanent height than a true float would need.
+ * More is a true floating overlay (`moreOverlay`), not reserved layout
+ * space: it's absolutely positioned with only `right`/`bottom` set (no
+ * `left`, no `width`), so it shrink-wraps to the pill's own content size
+ * instead of spanning full width — that shrink-wrap is what makes it safe
+ * this time; an earlier full-bounds attempt was reverted for that reason.
+ * `pointerEvents="box-none"` on the wrapper means only the pill itself
+ * accepts touches — everything else (scrolling, taps on content near it)
+ * passes straight through. Its vertical offset is measured off the real
+ * rendered height of the surface below it (`onLayout`), not guessed, so
+ * it sits at the same visual spot regardless of device inset.
  *
  * Tab bar surface uses expo-blur's BlurView, matching the web's `bg-white/97
  * backdrop-blur` (Stage A originally used solid white "for reliability" —
@@ -68,14 +67,16 @@ const labels: Record<(typeof VISIBLE_TABS)[number], string> = {
 export function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const [quickOpen, setQuickOpen] = useState(false);
+  const [surfaceHeight, setSurfaceHeight] = useState(0);
   // React Navigation only auto-measures its OWN default tab bar; a custom
   // `tabBar` render prop (like this one) is responsible for reporting its
   // real height back itself, or every consumer of useBottomTabBarHeight()/
   // BottomTabBarHeightContext (Screen.tsx's footer clearance, Dashboard's
   // scroll padding) silently falls back to React Navigation's generic
-  // ~49px+inset estimate instead of this bar's real ~140px (moreRow + nav
-  // strip) height — which is exactly what caused sticky footer buttons to
-  // sit underneath the floating More pill instead of above it.
+  // ~49px+inset estimate. Now that More is a floating overlay (not
+  // reserved space), this height is just the real nav-strip surface —
+  // content correctly gets no extra clearance for the pill, the same way
+  // the web's `position: fixed` pill reserves none either.
   const reportTabBarHeight = useContext(BottomTabBarHeightCallbackContext);
 
   // Only the 4 primary destinations render as strip icons — "more" is a
@@ -114,23 +115,11 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={styles.container} onLayout={(e) => reportTabBarHeight?.(e.nativeEvent.layout.height)}>
-      <View style={styles.moreRow}>
-        <Pressable
-          onPress={() => router.push('/more')}
-          accessibilityRole="button"
-          accessibilityLabel="More"
-          style={({ pressed }) => [styles.more, pressed && styles.morePressed]}
-        >
-          <MoreHorizontal size={16} color={colors.ink[700]} />
-          <AppText size={13} weight="semibold" color={colors.ink[700]}>
-            More
-          </AppText>
-        </Pressable>
-      </View>
       <BlurView
         intensity={90}
         tint="light"
         blurMethod="dimezisBlurViewSdk31Plus"
+        onLayout={(e) => setSurfaceHeight(e.nativeEvent.layout.height)}
         style={[styles.surface, { paddingBottom: insets.bottom + spacing[1.5] }]}
       >
         <View style={styles.row}>
@@ -148,28 +137,31 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
           {rightRoutes.map(renderItem)}
         </View>
       </BlurView>
+
+      {/* box-none: only the pill (a child) accepts touches — everything
+          else in this wrapper's bounds passes taps/scrolls through. */}
+      <View style={[styles.moreOverlay, { bottom: surfaceHeight + spacing[1.5] }]} pointerEvents="box-none">
+        <Pressable
+          onPress={() => router.push('/more')}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="More"
+          style={({ pressed }) => [styles.more, pressed && styles.morePressed]}
+        >
+          <MoreHorizontal size={16} color={colors.ink[700]} />
+          <AppText size={13} weight="semibold" color={colors.ink[700]}>
+            More
+          </AppText>
+        </Pressable>
+      </View>
+
       <QuickActionsSheet open={quickOpen} onClose={() => setQuickOpen(false)} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // Transparent, matching the web reference: the pill floats directly
-  // over the page's own background there (`position: fixed`, no backing
-  // panel), so the grey showing through here (the app's ink[50] screen
-  // background) behind the pill is correct, not a bug.
   container: { backgroundColor: 'transparent' },
-  // Real reserved row, not absolute — tightened from the original padding
-  // (was paddingTop 8 + paddingBottom 12 around the same 40px pill) since
-  // that's the only safe way to shrink this without risking the pill
-  // floating over scrollable content (see the file header).
-  moreRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[1],
-    paddingBottom: spacing[1.5],
-  },
   surface: {
     borderTopWidth: 1,
     borderTopColor: withOpacity(colors.ink[200], 70),
@@ -205,12 +197,17 @@ const styles = StyleSheet.create({
     ...shadows.fab,
   },
   fabPressed: { transform: [{ scale: 0.95 }] },
-  // web: fixed bottom-[74px] right-4, h-10, rounded-full, border-ink-200.
-  // Right-alignment comes from moreRow's justifyContent: 'flex-end'. No
-  // shadow token here (unlike most cards): Android's `elevation` on this
-  // rounded Pressable was rendering as a rectangular grey halo instead of
-  // following the pill's own shape — the border alone gives it enough
-  // definition against the surface.
+  // web: fixed bottom-[74px] right-4. Absolute with only right/bottom set
+  // (no left, no width) — shrink-wraps to the pill's own size, so this
+  // wrapper is never wider or taller than the visible pill.
+  moreOverlay: {
+    position: 'absolute',
+    right: spacing[4],
+  },
+  // h-10, rounded-full, border-ink-200. No shadow token here (unlike most
+  // cards): Android's `elevation` on this rounded Pressable was rendering
+  // as a rectangular grey halo instead of following the pill's own shape
+  // — the border alone gives it enough definition against the surface.
   more: {
     height: spacing[10],
     flexDirection: 'row',

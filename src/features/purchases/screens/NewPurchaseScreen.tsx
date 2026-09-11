@@ -272,7 +272,7 @@ export function NewPurchaseScreen() {
         </View>
       </AppSheet>
 
-      <AppSheet open={processing} onClose={() => undefined} title="Recording purchase">
+      <AppSheet open={processing} onClose={() => undefined} title="Recording purchase" dismissable={false}>
         <ProcessingState title="Updating inventory" message="Adding the received units to your stock." />
       </AppSheet>
 

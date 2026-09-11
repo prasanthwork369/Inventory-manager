@@ -101,7 +101,7 @@ export function ExportScreen() {
         </View>
       )}
 
-      <AppSheet open={vm.phase === 'working'} onClose={() => undefined} title="Generating export">
+      <AppSheet open={vm.phase === 'working'} onClose={() => undefined} title="Generating export" dismissable={false}>
         <ProcessingState title="Preparing your file" message={`Writing ${vm.totalRows} records to ${vm.format.toUpperCase()}.`} />
       </AppSheet>
 

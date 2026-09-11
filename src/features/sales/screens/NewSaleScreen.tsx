@@ -428,7 +428,7 @@ export function NewSaleScreen() {
         }}
       />
 
-      <AppSheet open={processing} onClose={() => undefined} title="Processing payment">
+      <AppSheet open={processing} onClose={() => undefined} title="Processing payment" dismissable={false}>
         <ProcessingState title="Completing sale" message="Recording the sale and updating stock on this device." />
       </AppSheet>
 

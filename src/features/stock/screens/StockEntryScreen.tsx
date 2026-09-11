@@ -315,7 +315,7 @@ export function StockEntryScreen({ mode }: StockEntryScreenProps) {
         )}
       </AppSheet>
 
-      <AppSheet open={processing} onClose={() => undefined} title="Updating stock">
+      <AppSheet open={processing} onClose={() => undefined} title="Updating stock" dismissable={false}>
         <ProcessingState title="Recording movement" message="Saving this change to your device." />
       </AppSheet>
 

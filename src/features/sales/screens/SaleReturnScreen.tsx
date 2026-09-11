@@ -220,7 +220,7 @@ export function SaleReturnScreen() {
         </View>
       </AppSheet>
 
-      <AppSheet open={processing} onClose={() => undefined} title="Processing return">
+      <AppSheet open={processing} onClose={() => undefined} title="Processing return" dismissable={false}>
         <ProcessingState title="Recording return" message="Updating the sale, refund and stock." />
       </AppSheet>
 

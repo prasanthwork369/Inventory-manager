@@ -85,7 +85,9 @@ export function Button({
         <>
           {loading && <ActivityIndicator size="small" color={v.text} />}
           {!loading && icon}
-          {typeof children === 'string' ? (
+          {React.isValidElement(children) ? (
+            children
+          ) : (
             <AppText
               size={s.fontSize}
               weight="semibold"
@@ -94,8 +96,6 @@ export function Button({
             >
               {children}
             </AppText>
-          ) : (
-            children
           )}
         </>
       )}

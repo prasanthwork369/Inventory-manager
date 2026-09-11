@@ -143,12 +143,16 @@ export function ProductListScreen({ initialCategoryId }: ProductListScreenProps)
         description="Narrow down your product list."
         footer={
           <View style={styles.sheetFooter}>
-            <Button variant="secondary" block onPress={resetFilters}>
-              Reset
-            </Button>
-            <Button block onPress={() => setFiltersOpen(false)}>
-              Show {filteredProducts.length} products
-            </Button>
+            <View style={styles.flex1}>
+              <Button variant="secondary" block onPress={resetFilters}>
+                Reset
+              </Button>
+            </View>
+            <View style={styles.flex1}>
+              <Button block onPress={() => setFiltersOpen(false)}>
+                {`Show ${filteredProducts.length} products`}
+              </Button>
+            </View>
           </View>
         }
       >

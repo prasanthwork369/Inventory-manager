@@ -28,12 +28,12 @@ export function Badge({ tone = 'neutral', dot, children, style }: BadgeProps) {
   return (
     <View style={[styles.badge, { backgroundColor: t.bg }, style]}>
       {dot && <View style={[styles.dot, { backgroundColor: t.dot }]} />}
-      {typeof children === 'string' ? (
+      {React.isValidElement(children) ? (
+        children
+      ) : (
         <AppText size={12} weight="semibold" color={t.text}>
           {children}
         </AppText>
-      ) : (
-        children
       )}
     </View>
   );

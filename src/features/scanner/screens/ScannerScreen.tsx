@@ -12,6 +12,7 @@
  */
 import React, { useEffect } from 'react';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { PackageSearch, ScanLine, X } from 'lucide-react-native';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
@@ -44,6 +45,10 @@ export function ScannerScreen() {
 
   return (
     <View style={styles.root}>
+      {/* This is the one dark-background screen in the app — override the
+          root layout's "dark" (dark icon) default so status bar content
+          stays visible here; reverts automatically when this unmounts. */}
+      <StatusBar style="light" />
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <Pressable
           onPress={() => router.back()}
