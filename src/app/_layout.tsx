@@ -66,8 +66,11 @@ export default function RootLayout() {
             background, so dark (not light/white) icons are the right
             default — Scanner overrides this to "light" while it's focused
             (expo-status-bar merges mounted StatusBar props in mount order,
-            reverting automatically on unmount). */}
-        <StatusBar style="auto" />
+            reverting automatically on unmount). Not "auto": this app has
+            no real dark-mode theming, so on a device in system dark mode
+            "auto" would render light/white icons — invisible against our
+            always-light screens. */}
+        <StatusBar style="dark" />
         <ToastProvider>
           <BottomSheetModalProvider>
             <Stack screenOptions={{ headerShown: false }}>
