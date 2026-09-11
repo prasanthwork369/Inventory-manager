@@ -14,7 +14,7 @@
  * - Interactive keyboard handling (android_keyboardInputMode="adjustResize").
  * - Responsive tablet maxWidth with centered alignment.
  */
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BottomSheetBackdrop,
   type BottomSheetBackdropProps,
@@ -56,6 +56,13 @@ export function AppSheet({
   const closingFromPropRef = useRef(false);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
+  // Measured, not left to enableFooterMarginAdjustment alone: with
+  // enableDynamicSizing, that automatic adjustment doesn't reliably
+  // reserve enough scroll-content space for the footer's real height, so
+  // long content's last rows end up hidden behind the footer and
+  // unreachable by scrolling. Explicit padding from the footer's own
+  // onLayout guarantees the scrollable area always clears it.
+  const [footerHeight, setFooterHeight] = useState(0);
 
   // Handle hardware back press on Android
   useEffect(() => {
@@ -157,7 +164,10 @@ export function AppSheet({
       if (!footer) return null;
       return (
         <BottomSheetFooter {...footerProps} bottomInset={0}>
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
+          <View
+            onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+            style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}
+          >
             {footer}
           </View>
         </BottomSheetFooter>
@@ -188,10 +198,9 @@ export function AppSheet({
         style={styles.body}
         contentContainerStyle={[
           styles.bodyContent,
-          !footer && { paddingBottom: Math.max(insets.bottom, spacing[4]) },
+          { paddingBottom: footer ? footerHeight + spacing[4] : Math.max(insets.bottom, spacing[4]) },
         ]}
         keyboardShouldPersistTaps="handled"
-        enableFooterMarginAdjustment={true}
       >
         {children}
       </BottomSheetScrollView>
