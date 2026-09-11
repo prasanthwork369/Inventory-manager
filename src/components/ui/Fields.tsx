@@ -385,7 +385,11 @@ const styles = StyleSheet.create({
   // just reduced opacity like the platform default.
   selectTriggerDisabled: { opacity: 0.5 },
   selectValue: { flexShrink: 1 },
-  selectOptions: { gap: spacing[2] },
+  // minHeight only stops the sheet's dynamic sizing from collapsing when
+  // there are 0-2 options (e.g. categories still loading, or a short
+  // list) — a longer list already exceeds this and grows/scrolls as
+  // normal, capped by AppSheet's own maxDynamicContentSize.
+  selectOptions: { gap: spacing[2], minHeight: 300 },
   selectOptionRow: {
     flexDirection: 'row',
     alignItems: 'center',
